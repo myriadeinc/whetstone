@@ -1,2 +1,2 @@
 # whetstone
-An improved service for managing xmrig connections
+An improved proxy service for managing xmrig connections

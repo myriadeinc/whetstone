@@ -1,0 +1,8 @@
+version: "3"
+services:
+  whetstone:
+    build: ./
+    ports:
+      - '8222:8222'
+    volumes:
+      - ./:/usr/src/app

@@ -1,0 +1,14 @@
+FROM golang:1.15.6-buster
+WORKDIR /usr/src/app
+COPY ./ /usr/src/app
+RUN useradd gouser && usermod -a -G root gouser && mkdir /home/gouser
+RUN chown gouser:gouser /home/gouser
+
+
+USER gouser
+RUN go get github.com/githubnemo/CompileDaemon
+
+RUN go mod download
+
+ENTRYPOINT CompileDaemon --build="go -o ./build/whetstone build main.go" --command="./build/whetstone"
+# CMD tail -f /dev/null
