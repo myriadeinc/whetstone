@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io"
 	"time"
-
 	"github.com/rs/zerolog/log"
 )
 
@@ -61,7 +60,8 @@ func (r *RpcServer) handleClient(cs *Session) {
 
 func (cs *Session) sendResult(id *json.RawMessage, result interface{}, err error) error {
 	if err != nil {
-		return err
+		message := JSONRpcResp{Id: id, Version: "2.0", Error: err, Result: nil}
+		return cs.enc.Encode(&message)
 	}
 	cs.Lock()
 	defer cs.Unlock()
@@ -70,10 +70,10 @@ func (cs *Session) sendResult(id *json.RawMessage, result interface{}, err error
 }
 
 // Push notification
-func (cs *Session) sendJob(result (*json.RawMessage)) error {
+func (cs *Session) sendJob(result interface{}) error {
 	cs.Lock()
 	defer cs.Unlock()
-	message := pushMessage{Version: "2.0", Method: "job", Params: result}
+	message := JSONRpcPushMessage{Version: "2.0", Method: "job", Params: result}
 	return cs.enc.Encode(&message)
 }
 
@@ -93,10 +93,11 @@ func (cs *Session) handleMessage(r *RpcServer, req *JSONRpcReq) error {
 	case "login":
 		r.registerSession(cs)
 		log.Info().Msg(fmt.Sprintf("Login from %s", cs.ip))
-		var result *json.RawMessage = r.callEmerald("login", req.Params)
+		var fromEmerald *json.RawMessage = r.callEmerald("login", req.Params)
+		msg := handleEmeraldJob(fromEmerald, true)
 		// Save data so we can recall for job
 		cs.LoginData = req.Params
-		return cs.sendResult(req.Id, result, nil)
+		return cs.sendResult(req.Id, msg, nil)
 	case "getjob":
 		return cs.sendResult(req.Id, nil, nil)
 	case "submit":

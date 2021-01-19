@@ -163,7 +163,9 @@ func (r *RpcServer) broadcastNewJobs() {
 		bcast <- n
 		go func(cs *Session) {
 			job := r.callEmerald("proxyjob", cs.LoginData)
-			err := cs.sendJob(job)
+			msg := handleEmeraldJob(job, false)
+			
+			err := cs.sendJob(msg)
 			<-bcast
 			if err != nil {
 				log.Error().Msgf("Job transmit error to %s: %v", cs.ip, err)
